@@ -1,0 +1,19 @@
+﻿@model CostaRicaMusic.DAL.Entities.Playlist
+
+@{
+    ViewData["Title"] = "Eliminar Playlist";
+}
+
+<h1>Eliminar Playlist</h1>
+
+<h3>¿Está seguro de eliminar esta playlist?</h3>
+
+<div class="mb-3">
+    <strong>Nombre:</strong> @Model.Nombre
+</div>
+
+<form asp-action="Delete" method="post">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Eliminar</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</form>

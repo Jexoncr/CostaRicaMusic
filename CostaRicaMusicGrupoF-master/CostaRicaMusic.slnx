@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="CostaRicaMusic.API/CostaRicaMusic.API.csproj" />
+  <Project Path="CostaRicaMusic.BLL/CostaRicaMusic.BLL.csproj" />
+  <Project Path="CostaRicaMusic.DAL/CostaRicaMusic.DAL.csproj" />
+  <Project Path="CostaRicaMusic.Web/CostaRicaMusic.Web.csproj" />
+</Solution>

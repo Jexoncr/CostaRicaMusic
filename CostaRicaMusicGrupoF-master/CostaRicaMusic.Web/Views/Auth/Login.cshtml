@@ -1,0 +1,57 @@
+@model CostaRicaMusic.Web.Models.LoginViewModel
+
+@{
+    ViewData["Title"] = "Iniciar sesión";
+}
+
+<div class="login-wrapper">
+    <div class="login-card">
+
+        <div class="login-brand">
+            <div class="brand-circle brand-circle-lg">
+                <i class="bi bi-music-note-beamed"></i>
+            </div>
+            <h2 class="login-title">Costa Rica Music</h2>
+            <p class="login-subtitle">Inicia sesión para continuar</p>
+        </div>
+
+        @if (ViewBag.Error != null)
+        {
+            <div class="login-error">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                @ViewBag.Error
+            </div>
+        }
+
+        <form asp-action="Login" method="post" class="login-form">
+            @Html.AntiForgeryToken()
+
+            <div class="login-field">
+                <label asp-for="Correo" class="login-label">
+                    <i class="bi bi-envelope me-1"></i> Correo
+                </label>
+                <input asp-for="Correo" class="login-input" placeholder="ejemplo@correo.com" autocomplete="email" />
+                <span asp-validation-for="Correo" class="login-validation"></span>
+            </div>
+
+            <div class="login-field">
+                <label asp-for="Contrasena" class="login-label">
+                    <i class="bi bi-lock me-1"></i> Contraseña
+                </label>
+                <input asp-for="Contrasena" type="password" class="login-input" placeholder="••••••••" autocomplete="current-password" />
+                <span asp-validation-for="Contrasena" class="login-validation"></span>
+            </div>
+
+            <button type="submit" class="login-btn">
+                <i class="bi bi-box-arrow-in-right me-2"></i> Ingresar
+            </button>
+        </form>
+
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

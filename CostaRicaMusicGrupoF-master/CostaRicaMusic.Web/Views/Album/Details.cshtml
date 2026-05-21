@@ -1,0 +1,99 @@
+@model CostaRicaMusic.DAL.Entities.Album
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = Model.Titulo;
+
+    var coverUrl = !string.IsNullOrEmpty(Model.PortadaUrl)
+        ? Url.Content("~/" + Model.PortadaUrl.TrimStart('/'))
+        : Url.Content("~/images/albums/default-cover.jpg");
+
+    var songList = Model.Canciones.Select((c, index) => new
+    {
+        id = c.Id,
+        nombre = c.Nombre,
+        artista = Model.Artista != null ? Model.Artista.Nombre : "Artista desconocido",
+        artistaId = Model.ArtistaId,
+        artistaImagenUrl = Model.Artista != null && !string.IsNullOrEmpty(Model.Artista.ImagenUrl)
+            ? Url.Content("~/" + Model.Artista.ImagenUrl.TrimStart('/'))
+            : Url.Content("~/images/artists/default-artist.jpg"),
+        artistaPais = Model.Artista?.Pais ?? "",
+        artistaDescripcion = Model.Artista?.Descripcion ?? "",
+        portadaUrl = coverUrl,
+        audioUrl = Url.Content("~/" + c.AudioUrl.TrimStart('/'))
+    }).ToList();
+
+    var songListJson = JsonSerializer.Serialize(songList);
+}
+
+<div class="artist-details-hero mb-4">
+    <div class="artist-details-image">
+        <img src="@coverUrl" alt="@Model.Titulo" />
+    </div>
+
+    <div class="artist-details-info">
+        <span class="section-badge">Álbum</span>
+        <h1 class="display-5 fw-bold mt-3 mb-2">@Model.Titulo</h1>
+
+        <p class="soft-label mb-1">
+            <a asp-controller="Artista" asp-action="Details" asp-route-id="@Model.ArtistaId" class="music-link">
+                @Model.Artista?.Nombre
+            </a>
+        </p>
+        <p class="soft-label mb-3">@Model.Anio • @Model.Canciones.Count canciones</p>
+
+        <div class="d-flex gap-2 flex-wrap">
+            <a asp-controller="Album" asp-action="Index" class="btn btn-outline-light">
+                <i class="bi bi-disc-fill me-2"></i> Ver álbumes
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="music-section-card">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h3 class="mb-0">Canciones del álbum</h3>
+        <span class="soft-label">@Model.Canciones.Count canciones</span>
+    </div>
+
+    @if (Model.Canciones.Any())
+    {
+        <div class="track-list">
+            @foreach (var (cancion, index) in Model.Canciones.Select((c, i) => (c, i)))
+            {
+                <div class="track-row">
+                    <div class="track-main">
+                        <div class="track-cover">
+                            <img src="@coverUrl" alt="@Model.Titulo" />
+                        </div>
+                        <div class="track-info">
+                            <div class="track-title">@cancion.Nombre</div>
+                            <div class="track-meta">
+                                <a asp-controller="Artista" asp-action="Details" asp-route-id="@Model.ArtistaId" class="music-link">
+                                    @Model.Artista?.Nombre
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="track-side">
+                        <span class="soft-label">@cancion.Duracion s</span>
+                        <button type="button"
+                                class="btn btn-success btn-sm play-song-btn"
+                                data-playlist='@Html.Raw(songListJson)'
+                                data-index="@index">
+                            <i class="bi bi-play-fill"></i>
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="bi bi-music-note-beamed"></i>
+            <p class="mb-0">Este álbum no tiene canciones registradas.</p>
+        </div>
+    }
+</div>

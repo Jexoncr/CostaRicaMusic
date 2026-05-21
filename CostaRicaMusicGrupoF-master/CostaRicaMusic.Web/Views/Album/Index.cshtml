@@ -1,0 +1,106 @@
+@model CostaRicaMusic.Web.Models.AlbumIndexViewModel
+
+@{
+    ViewData["Title"] = "Álbumes";
+}
+
+<div class="music-hero mb-4">
+    <div>
+        <span class="section-badge">Explorar</span>
+        <h1 class="display-6 fw-bold mt-3 mb-2">Álbumes</h1>
+        <p class="text-light-emphasis mb-0">Explora la discografía completa de tus artistas favoritos.</p>
+    </div>
+</div>
+
+@if (Model.AlbumesDestacados.Any())
+{
+    <div class="music-section-card mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="mb-0">Álbumes destacados</h3>
+            <span class="soft-label">Más recientes</span>
+        </div>
+
+        <div class="playlist-grid">
+            @foreach (var album in Model.AlbumesDestacados)
+            {
+                var coverUrl = !string.IsNullOrEmpty(album.PortadaUrl)
+                    ? Url.Content("~/" + album.PortadaUrl.TrimStart('/'))
+                    : Url.Content("~/images/albums/default-cover.jpg");
+
+                <a asp-controller="Album" asp-action="Details" asp-route-id="@album.Id" class="playlist-card-link">
+                    <div class="playlist-card">
+                        <div class="playlist-card-cover">
+                            <img src="@coverUrl" alt="@album.Titulo" />
+                        </div>
+                        <div class="playlist-card-body">
+                            <h4 class="playlist-card-title">@album.Titulo</h4>
+                            <div class="playlist-card-meta">
+                                <span>@album.Artista?.Nombre</span>
+                                <span>•</span>
+                                <span>@album.Anio</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            }
+        </div>
+    </div>
+}
+
+<div class="music-section-card mb-4">
+    <form method="get" asp-controller="Album" asp-action="Index" class="row g-3 align-items-center">
+        <div class="col-md-10">
+            <input type="text"
+                   name="busqueda"
+                   value="@Model.Busqueda"
+                   class="form-control music-search-input"
+                   placeholder="Buscar por nombre de álbum o artista..." />
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary w-100">Buscar</button>
+            <a asp-controller="Album" asp-action="Index" class="btn btn-outline-light w-100">Limpiar</a>
+        </div>
+    </form>
+</div>
+
+<div class="music-section-card">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h3 class="mb-0">@(string.IsNullOrWhiteSpace(Model.Busqueda) ? "Todos los álbumes" : $"Resultados para \"{Model.Busqueda}\"")</h3>
+        <span class="soft-label">@Model.Albumes.Count() álbumes</span>
+    </div>
+
+    @if (Model.Albumes.Any())
+    {
+        <div class="playlist-grid">
+            @foreach (var album in Model.Albumes)
+            {
+                var coverUrl = !string.IsNullOrEmpty(album.PortadaUrl)
+                    ? Url.Content("~/" + album.PortadaUrl.TrimStart('/'))
+                    : Url.Content("~/images/albums/default-cover.jpg");
+
+                <a asp-controller="Album" asp-action="Details" asp-route-id="@album.Id" class="playlist-card-link">
+                    <div class="playlist-card">
+                        <div class="playlist-card-cover">
+                            <img src="@coverUrl" alt="@album.Titulo" />
+                        </div>
+                        <div class="playlist-card-body">
+                            <h4 class="playlist-card-title">@album.Titulo</h4>
+                            <div class="playlist-card-meta">
+                                <span>@album.Artista?.Nombre</span>
+                                <span>•</span>
+                                <span>@album.Anio</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="bi bi-disc"></i>
+            <p class="mb-0">No se encontraron álbumes.</p>
+        </div>
+    }
+</div>

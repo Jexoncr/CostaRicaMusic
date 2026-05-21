@@ -1,0 +1,109 @@
+﻿@model IEnumerable<CostaRicaMusic.DAL.Entities.Playlist>
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "Playlists";
+}
+
+<div class="music-hero mb-4">
+    <div>
+        <span class="section-badge">Colecciones</span>
+        <h1 class="display-6 fw-bold mt-3 mb-2">Tus Playlists</h1>
+        <p class="text-light-emphasis mb-0">Administra tus listas de reproducción y organiza tu música favorita.</p>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+        <h3 class="mb-1">Biblioteca personal</h3>
+        <span class="soft-label">Crea, edita y explora tus playlists</span>
+    </div>
+
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-2"></i> Crear Playlist
+    </a>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger mb-4">
+        @TempData["Error"]
+    </div>
+}
+
+@if (Model != null && Model.Any())
+{
+    <div class="playlist-grid">
+        @foreach (var playlist in Model)
+        {
+            var songCount = playlist.PlaylistCanciones != null ? playlist.PlaylistCanciones.Count : 0;
+            var coverUrl = Url.Content("~/images/albums/default-cover.jpg");
+
+            var firstSong = playlist.PlaylistCanciones?
+                .OrderBy(x => x.Orden)
+                .FirstOrDefault();
+
+            if (!string.IsNullOrEmpty(firstSong?.Cancion?.Album?.PortadaUrl))
+            {
+                coverUrl = Url.Content("~/" + firstSong.Cancion.Album.PortadaUrl.TrimStart('/'));
+            }
+
+            
+    var playlistCanciones = playlist.PlaylistCanciones != null
+        ? playlist.PlaylistCanciones.OrderBy(x => x.Orden).ToList()
+        : new List<CostaRicaMusic.DAL.Entities.PlaylistCancion>();
+
+    var playlistSongs = playlistCanciones.Select(x => new
+    {
+        nombre = x.Cancion?.Nombre ?? "",
+        artista = x.Cancion?.Artista?.Nombre ?? "Artista desconocido",
+        artistaId = x.Cancion?.ArtistaId ?? 0,
+        artistaImagenUrl = !string.IsNullOrEmpty(x.Cancion?.Artista?.ImagenUrl)
+            ? Url.Content("~/" + x.Cancion.Artista.ImagenUrl.TrimStart('/'))
+            : Url.Content("~/images/artists/default-artist.jpg"),
+        artistaPais = x.Cancion?.Artista?.Pais ?? "",
+        artistaDescripcion = x.Cancion?.Artista?.Descripcion ?? "",
+        portadaUrl = !string.IsNullOrEmpty(x.Cancion?.Album?.PortadaUrl)
+            ? Url.Content("~/" + x.Cancion.Album.PortadaUrl.TrimStart('/'))
+            : Url.Content("~/images/albums/default-cover.jpg"),
+        audioUrl = string.IsNullOrEmpty(x.Cancion?.AudioUrl)
+            ? ""
+            : Url.Content("~/" + x.Cancion.AudioUrl.TrimStart('/'))
+    }).ToList();
+
+    var playlistSongsJson = JsonSerializer.Serialize(playlistSongs);
+
+
+            <a asp-action="Details" asp-route-id="@playlist.Id" class="playlist-card-link">
+                <div class="playlist-card">
+                    <div class="playlist-card-cover">
+                        <img src="@coverUrl" alt="Portada playlist" />
+
+                        <button type="button"
+                                class="playlist-play-btn"
+                                onclick='event.preventDefault(); event.stopPropagation(); playPlaylistSong(@Html.Raw(playlistSongsJson), 0)'>
+                            <i class="bi bi-play-fill"></i>
+                        </button>
+                    </div>
+
+                    <div class="playlist-card-body">
+                        <h4 class="playlist-card-title">@playlist.Nombre</h4>
+                        <div class="playlist-card-meta">
+                            <span>@songCount canciones</span>
+                            <span>•</span>
+                            <span>@playlist.FechaCreacion.ToString("dd/MM/yyyy")</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        }
+    </div>
+}
+else
+{
+    <div class="empty-state">
+        <i class="bi bi-collection-play"></i>
+        <p class="mb-2">Todavía no has creado playlists.</p>
+        <a asp-action="Create" class="btn btn-primary">Crear la primera</a>
+    </div>
+}

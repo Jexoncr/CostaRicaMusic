@@ -1,0 +1,234 @@
+﻿@model CostaRicaMusic.Web.Models.CancionIndexViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Canciones";
+
+    var songList = Model.TodasLasCanciones.Select(c => new
+    {
+        id = c.Id,
+        nombre = c.Nombre,
+        artista = c.Artista != null ? c.Artista.Nombre : "Artista desconocido",
+        artistaId = c.ArtistaId,
+        artistaPais = c.Artista != null ? c.Artista.Pais : "",
+        artistaDescripcion = c.Artista != null ? c.Artista.Descripcion : "",
+        artistaImagenUrl = c.Artista != null && !string.IsNullOrEmpty(c.Artista.ImagenUrl)
+        ? Url.Content("~/" + c.Artista.ImagenUrl.TrimStart('/'))
+        : Url.Content("~/images/artists/default-artist.jpg"),
+        portadaUrl = c.Album != null && !string.IsNullOrEmpty(c.Album.PortadaUrl)
+        ? Url.Content("~/" + c.Album.PortadaUrl.TrimStart('/'))
+        : Url.Content("~/images/albums/default-cover.jpg"),
+        audioUrl = Url.Content("~/" + c.AudioUrl.TrimStart('/'))
+    }).ToList();
+
+    var songListJson = JsonSerializer.Serialize(songList);
+}
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="floating-toast toast-success" id="floatingToast">
+        <i class="bi bi-check-circle-fill"></i>
+        <span>@TempData["SuccessMessage"]</span>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="floating-toast toast-error" id="floatingToast">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>@TempData["ErrorMessage"]</span>
+    </div>
+}
+<div class="music-hero mb-4">
+    <div>
+        <span class="section-badge">Biblioteca musical</span>
+        <h1 class="display-6 fw-bold mt-3 mb-2">Catálogo de Canciones</h1>
+        <p class="text-light-emphasis mb-0">Explora canciones, artistas y álbumes desde un solo lugar.</p>
+    </div>
+</div>
+
+<div class="music-section-card mb-4">
+    <form method="get" asp-controller="Cancion" asp-action="Index" class="row g-3 align-items-center">
+        <div class="col-md-10">
+            <input type="text" name="busqueda" value="@Model.Busqueda" class="form-control music-search-input" placeholder="Buscar canción, artista o álbum..." />
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary w-100">Buscar</button>
+            <a asp-controller="Cancion" asp-action="Index" class="btn btn-outline-light w-100">Limpiar</a>
+        </div>
+    </form>
+</div>
+
+<div class="music-section-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">Canciones disponibles</h3>
+        <span class="soft-label">@Model.Canciones.Count() canciones en esta página</span>
+    </div>
+
+    @if (Model.Canciones.Any())
+    {
+        <div class="track-list">
+            @foreach (var cancion in Model.Canciones)
+            {
+                <div class="track-row">
+                    <div class="track-main">
+                        <div class="track-cover">
+                            <img src="@(string.IsNullOrEmpty(cancion.Album?.PortadaUrl) ? Url.Content("~/images/albums/default-cover.jpg") : Url.Content("~/" + cancion.Album.PortadaUrl.TrimStart('/')))" alt="Portada" />
+                        </div>
+
+                        <div class="track-info">
+                            <div class="track-title">@cancion.Nombre</div>
+                            <div class="track-meta">
+                                <a asp-controller="Artista" asp-action="Details" asp-route-id="@cancion.ArtistaId" class="music-link">
+                                    @cancion.Artista?.Nombre
+                                </a>
+                                <span class="track-dot">•</span>
+                                <a asp-controller="Album" asp-action="Details" asp-route-id="@cancion.AlbumId" class="music-link">
+                                    @cancion.Album?.Titulo
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="track-side">
+                        <span class="soft-label">@cancion.Duracion s</span>
+
+                        @{
+                            var globalIndex = Model.TodasLasCanciones
+                                .Select((song, index) => new { song.Id, index })
+                                .First(x => x.Id == cancion.Id)
+                                .index;
+                        }
+
+                        <button type="button"
+                                class="btn btn-success btn-sm play-song-btn"
+                                data-playlist='@Html.Raw(songListJson)'
+                                data-index="@globalIndex">
+                            <i class="bi bi-play-fill"></i>
+                        </button>
+
+                        @if (Model.UsuarioLogueado)
+                        {
+                            <button type="button"
+                                    class="btn btn-outline-light btn-sm"
+                                    onclick="openAddToPlaylistModal(@cancion.Id, '@cancion.Nombre.Replace("'", "\\'")')">
+                                <i class="bi bi-plus-circle me-1"></i> Agregar
+                            </button>
+                        }
+                        else
+                        {
+                            <a asp-controller="Auth" asp-action="Login" class="btn btn-outline-light btn-sm">
+                                <i class="bi bi-plus-circle me-1"></i> Agregar
+                            </a>
+                        }
+                    </div>
+                </div>
+
+
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="bi bi-music-note-beamed"></i>
+            <p class="mb-0">No se encontraron canciones.</p>
+        </div>
+    }
+</div>
+
+@if (Model.TotalPaginas > 1)
+{
+    <div class="d-flex justify-content-center mt-4">
+        <nav>
+            <ul class="pagination pagination-modern">
+                @for (int i = 1; i <= Model.TotalPaginas; i++)
+                {
+                    <li class="page-item @(i == Model.PaginaActual ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-busqueda="@Model.Busqueda" asp-route-pagina="@i">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    </div>
+}
+
+@if (Model.UsuarioLogueado)
+{
+<div id="customPlaylistModal" class="custom-modal-overlay">
+    <div class="custom-modal-box">
+        <div class="custom-modal-header">
+            <h5>Agregar a playlist</h5>
+            <button type="button" class="custom-modal-close" onclick="closeAddToPlaylistModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <form asp-controller="Playlist" asp-action="AddSong" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="custom-modal-body">
+                <p id="selectedSongText" class="mb-3">Canción seleccionada</p>
+
+                <input type="hidden" id="selectedSongId" name="cancionId" />
+                <input type="hidden" name="returnController" value="Cancion" />
+                <input type="hidden" name="returnAction" value="Index" />
+
+                <div class="mb-3">
+                    <label for="selectedPlaylistId" class="form-label">Selecciona una playlist</label>
+                    <select id="selectedPlaylistId" name="playlistId" class="form-select" required>
+                        <option value="">Seleccione una playlist</option>
+                        @foreach (var playlist in Model.Playlists)
+                        {
+                            <option value="@playlist.Id">@playlist.Nombre</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="custom-modal-footer">
+                <button type="button" class="btn btn-outline-light" onclick="closeAddToPlaylistModal()">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Agregar</button>
+            </div>
+        </form>
+    </div>
+</div>
+}
+
+@section Scripts {
+    <script>
+        function openAddToPlaylistModal(songId, songName) {
+            document.getElementById("selectedSongId").value = songId;
+            document.getElementById("selectedSongText").textContent = "Canción: " + songName;
+            document.getElementById("customPlaylistModal").classList.add("show");
+            document.body.classList.add("modal-open-custom");
+        }
+
+        function closeAddToPlaylistModal() {
+            document.getElementById("customPlaylistModal").classList.remove("show");
+            document.body.classList.remove("modal-open-custom");
+        }
+
+        document.addEventListener("click", function (e) {
+            const overlay = document.getElementById("customPlaylistModal");
+            if (e.target === overlay) {
+                closeAddToPlaylistModal();
+            }
+        });
+
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") {
+                closeAddToPlaylistModal();
+            }
+        });
+
+        const floatingToast = document.getElementById("floatingToast");
+        if (floatingToast) {
+            setTimeout(() => {
+                floatingToast.classList.add("show");
+            }, 100);
+
+            setTimeout(() => {
+                floatingToast.classList.remove("show");
+            }, 3200);
+        }
+    </script>
+}

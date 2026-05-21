@@ -1,0 +1,70 @@
+﻿@model CostaRicaMusic.Web.Models.ArtistaIndexViewModel
+
+@{
+    ViewData["Title"] = "Artistas";
+}
+
+<div class="music-hero mb-4">
+    <div>
+        <span class="section-badge">Explorar</span>
+        <h1 class="display-6 fw-bold mt-3 mb-2">Artistas</h1>
+        <p class="text-light-emphasis mb-0">Descubre artistas y entra a sus álbumes y detalles.</p>
+    </div>
+</div>
+
+<div class="music-section-card mb-4">
+    <form method="get" asp-controller="Artista" asp-action="Index" class="row g-3 align-items-center">
+        <div class="col-md-10">
+            <input type="text"
+                   name="busqueda"
+                   value="@Model.Busqueda"
+                   class="form-control music-search-input"
+                   placeholder="Buscar artista por nombre..." />
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary w-100">Buscar</button>
+            <a asp-controller="Artista" asp-action="Index" class="btn btn-outline-light w-100">Limpiar</a>
+        </div>
+    </form>
+</div>
+
+<div class="music-section-card">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h3 class="mb-0">Artistas disponibles</h3>
+        <span class="soft-label">@Model.Artistas.Count() artistas</span>
+    </div>
+
+    @if (Model.Artistas.Any())
+    {
+        <div class="playlist-grid">
+            @foreach (var artista in Model.Artistas)
+            {
+                var artistImage = !string.IsNullOrEmpty(artista.ImagenUrl)
+                    ? Url.Content("~/" + artista.ImagenUrl.TrimStart('/'))
+                    : Url.Content("~/images/artists/default-artist.jpg");
+
+                <a asp-controller="Artista" asp-action="Details" asp-route-id="@artista.Id" class="playlist-card-link">
+                    <div class="playlist-card">
+                        <div class="playlist-card-cover">
+                            <img src="@artistImage" alt="@artista.Nombre" />
+                        </div>
+
+                        <div class="playlist-card-body">
+                            <h4 class="playlist-card-title">@artista.Nombre</h4>
+                            <div class="playlist-card-meta">
+                                <span>@artista.Pais</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="bi bi-person-vcard"></i>
+            <p class="mb-0">No se encontraron artistas.</p>
+        </div>
+    }
+</div>

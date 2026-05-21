@@ -1,0 +1,81 @@
+﻿@model CostaRicaMusic.DAL.Entities.Artista
+
+@{
+    ViewData["Title"] = "Detalle Artista";
+
+    var artistImage = !string.IsNullOrEmpty(Model.ImagenUrl)
+        ? Url.Content("~/" + Model.ImagenUrl.TrimStart('/'))
+        : Url.Content("~/images/artists/default-artist.jpg");
+
+    var albumes = Model.Canciones != null
+        ? Model.Canciones
+            .Where(c => c.Album != null)
+            .GroupBy(c => c.AlbumId)
+            .Select(g => g.First().Album)
+            .Where(a => a != null)
+            .OrderBy(a => a!.Titulo)
+            .ToList()
+        : new List<CostaRicaMusic.DAL.Entities.Album?>();
+}
+
+<div class="artist-details-hero mb-4">
+    <div class="artist-details-image">
+        <img src="@artistImage" alt="@Model.Nombre" />
+    </div>
+
+    <div class="artist-details-info">
+        <span class="section-badge">Artista</span>
+        <h1 class="display-5 fw-bold mt-3 mb-2">@Model.Nombre</h1>
+        <p class="soft-label mb-2">@Model.Pais</p>
+        <p class="artist-description mb-3">@Model.Descripcion</p>
+
+        <div class="d-flex gap-2 flex-wrap">
+            <a asp-controller="Artista" asp-action="Index" class="btn btn-outline-light">
+                <i class="bi bi-people-fill me-2"></i> Ver artistas
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="music-section-card">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h3 class="mb-0">Álbumes de @Model.Nombre</h3>
+        <span class="soft-label">@albumes.Count álbumes</span>
+    </div>
+
+    @if (albumes.Any())
+    {
+        <div class="playlist-grid">
+            @foreach (var album in albumes)
+            {
+                var coverUrl = !string.IsNullOrEmpty(album?.PortadaUrl)
+                    ? Url.Content("~/" + album.PortadaUrl.TrimStart('/'))
+                    : Url.Content("~/images/albums/default-cover.jpg");
+
+                <a asp-controller="Album" asp-action="Details" asp-route-id="@album!.Id" class="playlist-card-link">
+                    <div class="playlist-card">
+                        <div class="playlist-card-cover">
+                            <img src="@coverUrl" alt="@album.Titulo" />
+                        </div>
+
+                        <div class="playlist-card-body">
+                            <h4 class="playlist-card-title">@album.Titulo</h4>
+                            <div class="playlist-card-meta">
+                                <span>@Model.Nombre</span>
+                                <span>•</span>
+                                <span>@album.Anio</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="bi bi-disc"></i>
+            <p class="mb-0">Este artista no tiene álbumes registrados.</p>
+        </div>
+    }
+</div>

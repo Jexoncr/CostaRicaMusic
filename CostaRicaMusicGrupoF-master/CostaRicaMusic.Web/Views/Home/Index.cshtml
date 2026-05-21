@@ -1,0 +1,148 @@
+@model CostaRicaMusic.Web.Models.HomeViewModel
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "Inicio";
+}
+
+<div class="home-hero mb-4">
+    <div class="home-hero-content">
+        <div class="home-hero-icon">
+            <i class="bi bi-headphones"></i>
+        </div>
+        <div>
+            <span class="section-badge">Costa Rica Music</span>
+            <h1 class="display-5 fw-bold mt-3 mb-2">Tu música en un solo lugar</h1>
+            <p class="text-light-emphasis mb-3">
+                Explora canciones, artistas y playlists con una experiencia moderna.
+            </p>
+            <a asp-controller="Cancion" asp-action="Index" class="btn btn-primary">
+                <i class="bi bi-music-note-list me-2"></i> Explorar catálogo
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="music-section-card mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h3 class="mb-0"><i class="bi bi-collection-play-fill me-2 text-purple"></i>Tus playlists</h3>
+        @if (Model.UsuarioLogueado)
+        {
+            <a asp-controller="Playlist" asp-action="Index" class="soft-label home-ver-todos">Ver todas <i class="bi bi-arrow-right"></i></a>
+        }
+    </div>
+
+    @if (Model.UsuarioLogueado && Model.Playlists.Any())
+    {
+        <div class="playlist-grid">
+            @foreach (var playlist in Model.Playlists)
+            {
+                var firstSong = playlist.PlaylistCanciones?.FirstOrDefault();
+                var cover = !string.IsNullOrEmpty(firstSong?.Cancion?.Album?.PortadaUrl)
+                    ? Url.Content("~/" + firstSong.Cancion.Album.PortadaUrl.TrimStart('/'))
+                    : Url.Content("~/images/albums/default-cover.jpg");
+
+                <a asp-controller="Playlist" asp-action="Details" asp-route-id="@playlist.Id" class="playlist-card-link">
+                    <div class="playlist-card">
+                        <div class="playlist-card-cover">
+                            <img src="@cover" alt="Portada de @playlist.Nombre" />
+                        </div>
+                        <div class="playlist-card-body">
+                            <h4 class="playlist-card-title">@playlist.Nombre</h4>
+                            <div class="playlist-card-meta">
+                                <span>@(playlist.PlaylistCanciones?.Count ?? 0) canciones</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+    else if (!Model.UsuarioLogueado)
+    {
+        <div class="empty-state">
+            <i class="bi bi-collection-play"></i>
+            <p class="mb-2">Inicia sesión para ver tus playlists.</p>
+            <a asp-controller="Auth" asp-action="Login" class="btn btn-primary">Iniciar sesión</a>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="bi bi-collection-play"></i>
+            <p class="mb-2">Todavía no tienes playlists.</p>
+            <a asp-controller="Playlist" asp-action="Create" class="btn btn-primary">Crear una</a>
+        </div>
+    }
+</div>
+
+<div class="music-section-card mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h3 class="mb-0"><i class="bi bi-stars me-2 text-purple"></i>Canciones recomendadas</h3>
+        <a asp-controller="Cancion" asp-action="Index" class="soft-label home-ver-todos">Ver todas <i class="bi bi-arrow-right"></i></a>
+    </div>
+
+    @{
+        var songList = Model.Canciones.Select(c => new
+        {
+            nombre = c.Nombre,
+            artista = c.Artista?.Nombre ?? "Artista desconocido",
+            artistaId = c.ArtistaId,
+            artistaPais = c.Artista?.Pais ?? "",
+            artistaDescripcion = c.Artista?.Descripcion ?? "",
+            artistaImagenUrl = !string.IsNullOrEmpty(c.Artista?.ImagenUrl)
+                ? Url.Content("~/" + c.Artista.ImagenUrl.TrimStart('/'))
+                : Url.Content("~/images/artists/default-artist.jpg"),
+            portadaUrl = !string.IsNullOrEmpty(c.Album?.PortadaUrl)
+                ? Url.Content("~/" + c.Album.PortadaUrl.TrimStart('/'))
+                : Url.Content("~/images/albums/default-cover.jpg"),
+            audioUrl = Url.Content("~/" + c.AudioUrl.TrimStart('/'))
+        }).ToList();
+
+        var songListJson = JsonSerializer.Serialize(songList);
+        var i = 0;
+    }
+
+    <div class="home-horizontal-scroll">
+        @foreach (var song in Model.Canciones)
+        {
+            var cover = !string.IsNullOrEmpty(song.Album?.PortadaUrl)
+                ? Url.Content("~/" + song.Album.PortadaUrl.TrimStart('/'))
+                : Url.Content("~/images/albums/default-cover.jpg");
+
+            <div class="home-song-card">
+                <img src="@cover" alt="@song.Nombre" />
+                <div class="home-song-info">
+                    <strong>@song.Nombre</strong>
+                    <small>@song.Artista?.Nombre</small>
+                </div>
+                <button class="home-play-btn" onclick='playPlaylistSong(@Html.Raw(songListJson), @i)'>
+                    <i class="bi bi-play-fill"></i>
+                </button>
+            </div>
+
+            i++;
+        }
+    </div>
+</div>
+
+<div class="music-section-card">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h3 class="mb-0"><i class="bi bi-person-fill me-2 text-purple"></i>Artistas</h3>
+        <a asp-controller="Artista" asp-action="Index" class="soft-label home-ver-todos">Ver todos <i class="bi bi-arrow-right"></i></a>
+    </div>
+
+    <div class="home-horizontal-scroll">
+        @foreach (var artista in Model.Artistas)
+        {
+            var img = !string.IsNullOrEmpty(artista.ImagenUrl)
+                ? Url.Content("~/" + artista.ImagenUrl.TrimStart('/'))
+                : Url.Content("~/images/artists/default-artist.jpg");
+
+            <a asp-controller="Artista" asp-action="Details" asp-route-id="@artista.Id" class="home-artist-card">
+                <img src="@img" alt="@artista.Nombre" />
+                <span>@artista.Nombre</span>
+            </a>
+        }
+    </div>
+</div>
